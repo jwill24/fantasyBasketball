@@ -1,6 +1,9 @@
 import csv
 import pandas
 import numpy as np
+import os, sys
+
+teamSize = 15
 
 fg_ratings=[0.44,0.47,0.51,0.56]
 ft_ratings=[0.69,0.74,0.83,0.86]
@@ -54,22 +57,31 @@ def findRange(stat,array):
 
 #----------
 
-# Get name of draft pick
-name = input("Enter draft choice: ")
+for i in range(teamSize):
 
-# Delete the last line
-if name=="del":
-    lines = file('picks.csv', 'r').readlines()
-    del lines[-1]
-    file('picks.csv', 'w').writelines(lines)
+    # Get name of draft pick
+    print("")
+    print("")
+    name = input("Enter draft choice: ")
 
-# Open the drafData to get the info of the player
-else:
-    file = csv.reader(open('draftData.csv', "r"), delimiter=",")
-    fieldnames = ['NAME', 'FG', 'FT', 'TRES', 'PTS', 'REB', 'AST', 'STL', 'BLK', 'TO']
+    # Delete the last line
+    if name=="delete":
+        lines = open('picks.csv', 'r').readlines()
+        del lines[-1]
+        open('picks.csv', 'w').writelines(lines)
+        i = i-1
 
-    # Get the stats from the corresponding line
-    for row in file:
+    elif name=="done":
+        sys.exit()
+
+    # Open the drafData to get the info of the player
+    else:
+        file = csv.reader(open('draftData.csv', "r"), delimiter=",")
+        fieldnames = ['NAME', 'FG', 'FT', 'TRES', 'PTS', 'REB', 'AST',
+        'STL', 'BLK', 'TO']
+
+        # Get the stats from the corresponding line
+        for row in file:
             if name == row[2]:
                 fg = row[7][:4]
                 ft = row[8][:4]
@@ -81,34 +93,42 @@ else:
                 blk = row[14]
                 to = row[15]
 
-    # Open the csv file with stored picks
-    with open('picks.csv', 'a') as csvfile:
-        # Store stats of the drafted player
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writerow({'NAME': name, 'FG': fg, 'FT': ft, 'TRES': tres, 'PTS': pts, 'REB': reb, 'AST': ast, 'STL': stl, 'BLK': blk,'TO': to})
+        # Open the csv file with stored picks
+        with open('picks.csv', 'a') as csvfile:
+            # Store stats of the drafted player
+            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
+            writer.writerow({'NAME': name, 'FG': fg, 'FT': ft, 'TRES': tres,
+            'PTS': pts, 'REB': reb, 'AST': ast, 'STL': stl, 'BLK': blk,'TO': to})
 
-    #with open('picks.csv', 'r') as csvfile:
-        #reader = csv.DictReader(csvfile, delimiter=",")
-        #for row in reader:
-            #print( "float(row[col]): ", float( row[FG] ) )
+        # Import the picks file
+        df = pandas.read_csv('picks.csv')
 
-    # Import the picks file
-    df = pandas.read_csv('picks.csv')
+        # Get averages of team
+        aFG = averageCol(1)
+        aFT = averageCol(2)
+        aTRES = averageCol(3)
+        aPTS = averageCol(4)
+        aREB = averageCol(5)
+        aAST = averageCol(6)
+        aSTL = averageCol(7)
+        aBLK = averageCol(8)
+        aTO = averageCol(9)
 
-    # Get averages of team
-    aFG = averageCol(1)
-    aFT = averageCol(2)
-    aTRES = averageCol(3)
-    aPTS = averageCol(4)
-    aREB = averageCol(5)
-    aAST = averageCol(6)
-    aSTL = averageCol(7)
-    aBLK = averageCol(8)
-    aTO = averageCol(9)
+        print("")
+        print("")
+        print("Roster:")
+        for val in df['NAME']:
+            print(val)
+        print("")
 
-    # Build data frame from inputs
+        print("Your new average team stats are:")
+        # Build data frame from inputs
+        data = [ ['FG%',aFG,gradeStat(aFG,fg)], ['FT%',aFT,gradeStat(aFT,ft)],
+        ['3PM',aTRES,gradeStat(aTRES,tres)], ['PTS',aPTS,gradeStat(aPTS,pts)],
+        ['REB',aREB,gradeStat(aREB,reb)], ['AST',aAST,gradeStat(aAST,ast)],
+        ['STL',aSTL,gradeStat(aSTL,stl)], ['BLK',aBLK,gradeStat(aBLK,blk)],
+        ['TO',aTO,gradeStat(aTO,to)] ]
 
-    print("Your new average team stats are:")
-    print(" FG% ", "  FT% ", "  3PM ", "  PTS ", "  REB ", "  AST ", "  STL ", " BLK ", "  TO ")
-    print(aFG, " ", aFT," ", aTRES," ", aPTS," ", aREB," ", aAST," ", aSTL," ", aBLK," ", aTO)
-    print(gradeStat(aFG,fg), gradeStat(aFT,ft),gradeStat(aTRES,tres),gradeStat(aPTS,pts),gradeStat(aREB,reb),gradeStat(aAST,ast),gradeStat(aSTL,stl),gradeStat(aBLK,blk),gradeStat(aTO,to))
+        output = pandas.DataFrame(data, columns = ['Stat', 'Average', 'Grade'])
+
+        print( output.transpose() )
